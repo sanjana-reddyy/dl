@@ -1,0 +1,59 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.datasets import imdb
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, SimpleRNN, GRU, LSTM, Dense
+from tensorflow.keras.preprocessing import sequence
+
+# Set the maximum number of words to consider in the reviews
+max_words = 5000
+
+# Load the IMDB dataset
+(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_words)
+
+# Pad the sequences to have the same length
+max_length = 500
+x_train = sequence.pad_sequences(x_train, maxlen=max_length)
+x_test = sequence.pad_sequences(x_test, maxlen=max_length)
+
+# Lists to store accuracy for each model
+accuracies = []
+
+# Models to compare
+model_names = ["RNN", "GRU", "LSTM"]
+
+models = [
+    Sequential([
+        Embedding(max_words, 100, input_length=max_length),
+        SimpleRNN(128),
+        Dense(1, activation='sigmoid')
+    ]),
+    Sequential([
+        Embedding(max_words, 100, input_length=max_length),
+        GRU(128),
+        Dense(1, activation='sigmoid')
+    ]),
+    Sequential([
+        Embedding(max_words, 100, input_length=max_length),
+        LSTM(128),
+        Dense(1, activation='sigmoid')
+    ])
+]
+
+# Compile and train models
+batch_size = 128
+epochs = 5
+
+for model in models:
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.2)
+    _, accuracy = model.evaluate(x_test, y_test, batch_size=batch_size)
+    accuracies.append(accuracy)
+
+# Create a bar plot
+plt.bar(epochs, accuracies)
+plt.xlabel('Epochs')
+plt.ylabel('Test Accuracy')
+plt.title('Comparison of Recurrent Models for Sentiment Analysis')
+plt.ylim(0.8, 1.0)  # Adjust the y-axis limits as needed
+plt.show()
